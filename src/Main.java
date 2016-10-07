@@ -4,6 +4,7 @@ import org.la4j.Matrix;
 import org.la4j.matrix.DenseMatrix;
 import org.la4j.matrix.dense.Basic1DMatrix;
 import org.la4j.matrix.dense.Basic2DMatrix;
+import org.la4j.matrix.functor.MatrixProcedure;
 import org.la4j.vector.DenseVector;
 import org.la4j.vector.dense.BasicVector;
 
@@ -22,8 +23,10 @@ public class Main {
 		ProcessInputs pi = new ProcessInputs(30,12,"data/train/X_train.txt");
 		ProcessInputs pi2 = new ProcessInputs(30,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
-		Matrix y = pi2.getInputs();
-		//printDimensions(y);
+		Matrix y_raw = pi2.getInputs();
+		//Matrix y = rawValuesToVector(y_raw,12);
+
+		//printDimensions(y_raw);
 		x = addBias(x);
 		//printDimensions(x);
 	
@@ -31,7 +34,7 @@ public class Main {
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{12,4,5},x);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{12,4,12},x,y_raw);
 		//printDimensions(nn.getWeights()[0]);
 		
 		
@@ -41,7 +44,13 @@ public class Main {
 		
 	}
 	
-
+	private static Matrix rawValuesToVector(Matrix m, int sizeVector){
+		Matrix y = Matrix.zero(m.rows(), sizeVector) ;
+		for (int i = 0; i < m.rows(); i++) {
+			y.set(i,(int) m.get(i,0)-1,1.0);
+		}
+		return y;
+	}
 	
 	public static void printDimensions(Matrix m){
 		System.out.println(m);
