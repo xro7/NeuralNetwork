@@ -19,18 +19,20 @@ public class Main {
 		
 
 		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
-		ProcessInputs pi = new ProcessInputs(10,5,"data/train/X_train.txt");
+		ProcessInputs pi = new ProcessInputs(30,12,"data/train/X_train.txt");
+		ProcessInputs pi2 = new ProcessInputs(30,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
-		printDimensions(x);
+		Matrix y = pi2.getInputs();
+		//printDimensions(y);
 		x = addBias(x);
-		printDimensions(x);
+		//printDimensions(x);
 	
 /*		ProcessInputs pi2 = new ProcessInputs(7767,561,"data/train/Y_train.txt");
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{10,3,1},x);
-		printDimensions(nn.getWeights()[0]);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{12,4,5},x);
+		//printDimensions(nn.getWeights()[0]);
 		
 		
 		

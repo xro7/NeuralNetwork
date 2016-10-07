@@ -1,4 +1,5 @@
 import org.la4j.Matrix;
+import org.la4j.Vector;
 
 public class NeuralNetwork {
 	
@@ -6,18 +7,64 @@ public class NeuralNetwork {
 	private int[] layers;
 	private Matrix[] weights;
 	private Matrix[] activations;
+	private Matrix inputs;
 	
 	public NeuralNetwork(int[] layers,Matrix x){
 		this.numberOfLayers = layers.length;
 		this.setLayers(layers);
 		this.weights = new Matrix[numberOfLayers-1];
+		this.inputs = x;
 		for (int i = 0; i < numberOfLayers -1 ; i++) {
 			this.weights[i] = Matrix.zero(layers[i+1], layers[i] + 1 /*(this is the bias term that added to the weights)*/);
 			randomInit(this.weights[i]);
+			//printDimensions(this.weights[i]);
 		}
-		activations = new Matrix[layers.length];// first layer is the inputs
-		activations[0] = x.copy();
+		
 	}
+	
+	public void feedforward(){
+		
+		activations = new Matrix[layers.length];// first layer is the inputs
+		activations[0] = getInputs().copy();
+		
+		for (int i = 1; i < numberOfLayers ; i++) {
+			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
+			getActivations()[i] = getActivations()[i-1].multiply(getWeights()[i-1].transpose());  //W*a
+			if (i != numberOfLayers-1){
+				getActivations()[i] = addBias(getActivations()[i]); //add bias column
+			}
+			sigmoid(getActivations()[i]);//sigmoid(W*a)
+			printDimensions(getActivations()[i]);
+		}
+	}
+	
+	public void backpropagation(){
+		
+	}
+	
+	public void costFunction(){
+		
+	}
+	
+	
+	private static void randomInit(Matrix matrix){
+		java.util.Random r = new java.util.Random();
+		for (int i = 0; i < matrix.rows(); i++) {
+			for (int j = 0; j < matrix.columns(); j++) {
+				matrix.set(i, j, r.nextGaussian());
+			}
+		}
+	}
+	
+	private void sigmoid(Matrix t){
+		for (int i = 0; i < t.rows(); i++) {
+			for (int j = 0; j < t.columns(); j++) {
+				t.set(i, j, 1.0 / (1.0 + Math.exp(-t.get(i,j))));
+			}
+		}
+		
+	}
+	
 	
 
 	public int[] getLayers() {
@@ -44,34 +91,6 @@ public class NeuralNetwork {
 		this.weights = weights;
 	}
 	
-	private static void randomInit(Matrix matrix){
-		java.util.Random r = new java.util.Random();
-		for (int i = 0; i < matrix.rows(); i++) {
-			for (int j = 0; j < matrix.columns(); j++) {
-				matrix.set(i, j, r.nextGaussian());
-			}
-		}
-	}
-	
-	private static void sigmoid(Matrix t){
-		for (int i = 0; i < t.rows(); i++) {
-			for (int j = 0; j < t.columns(); j++) {
-				t.set(i, j, 1.0 / (1.0 + Math.exp(-t.get(i,j))));
-			}
-		}
-		
-	}
-	
-	public void feedforward(Matrix[] activations){
-		
-		for (int i = 1; i < numberOfLayers ; i++) {
-			activations[i] = Matrix.zero(activations[0].rows(), layers[i]);//need to add a column of one every time i create an activation
-		}
-		
-		
-	}
-
-
 	public Matrix[] getActivations() {
 		return activations;
 	}
@@ -86,6 +105,18 @@ public class NeuralNetwork {
 		System.out.println("Diamensions of matrix are "+m.rows()+"X"+m.columns() );
 	}
 	
+	private static Matrix  addBias(Matrix m){
+		m = m.insertColumn(0, Vector.constant(m.rows(), 1.0));
+		return m;
+	}
 	
+	public Matrix getInputs() {
+		return inputs;
+	}
+
+
+	public void setInputs(Matrix inputs) {
+		this.inputs = inputs;
+	}
 
 }
