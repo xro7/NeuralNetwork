@@ -1,6 +1,9 @@
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.InputMismatchException;
+import java.util.Locale;
 import java.util.Scanner;
+
 import org.la4j.Matrix;
 
 
@@ -54,17 +57,22 @@ public class ProcessInputs {
 	
 	private void createMatrix(Matrix inputs){
 		 int i = 0;
-		 try (Scanner scanner =  new Scanner(Paths.get(getPath()), "UTF-8")){
-		    
+		 try (Scanner scanner =  new Scanner(Paths.get(getPath()), "UTF-8").useLocale(Locale.ENGLISH);){
 		    	while (scanner.hasNextLine()){	  		    		
 		    	    try (Scanner s = new Scanner(scanner.nextLine())){;
+		    	    	s.useLocale(Locale.ENGLISH);
 		    	    	if (i == getInstances()){
 		    	    		break;
 		    	    	}
 		    	    	s.useDelimiter("\\s");
 		    	    	int j = 0;
 		    		    while (s.hasNext()){
+		    		    	try{
 		    		    	inputs.set(i, j, s.nextDouble());
+		    		    	
+			    		    } catch (InputMismatchException e) {
+			    		        System.out.print(e.getMessage()); //try to find out specific reason.
+			    		    }
 		    		    	j++;
 			    	    	if (j == getFeatures()){
 			    	    		break;

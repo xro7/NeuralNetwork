@@ -39,7 +39,7 @@ public class NeuralNetwork {
 				getActivations()[i] = addBias(getActivations()[i]); //add bias column
 			}
 			sigmoid(getActivations()[i]);//sigmoid(W*a)
-			//printDimensions(getActivations()[i]);
+			printDimensions(getActivations()[i]);
 		}
 	}
 	
