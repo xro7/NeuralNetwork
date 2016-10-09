@@ -7,6 +7,7 @@ public class NeuralNetwork {
 	private int numberOfLayers;
 	private int[] layers;
 	private Matrix[] weights;
+	private Matrix[] biases;
 	private Matrix[] activations;
 	private Matrix training_inputs;
 	private Matrix training_outputs;
@@ -15,11 +16,14 @@ public class NeuralNetwork {
 		this.numberOfLayers = layers.length;
 		this.setLayers(layers);
 		this.weights = new Matrix[numberOfLayers-1];
+		this.biases = new Matrix[numberOfLayers-1];
 		this.setTraining_inputs(x);
 		this.setTraining_outputs(rawValuesToVector(y, layers[numberOfLayers-1]));
 		for (int i = 0; i < numberOfLayers -1 ; i++) {
-			this.weights[i] = Matrix.zero(layers[i+1], layers[i] + 1 /*(this is the bias term that added to the weights)*/);
+			this.weights[i] = Matrix.zero(layers[i+1], layers[i]);
+			this.biases[i] = Matrix.zero(1, layers[i+1]);
 			randomInit(this.weights[i]);
+			randomInit(this.biases[i]);
 			//printDimensions(this.weights[i]);
 		}
 		feedforward();
@@ -32,13 +36,13 @@ public class NeuralNetwork {
 		
 		activations = new Matrix[layers.length];// first layer is the inputs
 		activations[0] = getTraining_inputs().copy();
-		
+
 		for (int i = 1; i < numberOfLayers ; i++) {
 			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			getActivations()[i] = getActivations()[i-1].multiply(getWeights()[i-1].transpose());  //W*a
-			if (i != numberOfLayers-1){
+			getActivations()[i] = (getActivations()[i-1].multiply(getWeights()[i-1].transpose()));  //W*a + need to add bias b
+/*			if (i != numberOfLayers-1){
 				getActivations()[i] = addBias(getActivations()[i]); //add bias column
-			}
+			}*/
 			sigmoid(getActivations()[i]);//sigmoid(W*a)
 			//printDimensions(getActivations()[i]);
 		}
@@ -55,10 +59,10 @@ public class NeuralNetwork {
 		printDimensions(a[0]);
 		for (int i = 1; i < numberOfLayers ; i++) {
 			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			z[i] = a[i-1].multiply(getWeights()[i-1].transpose());  //W*a
-			if (i != numberOfLayers-1){
+			z[i] = (a[i-1].multiply(getWeights()[i-1].transpose())).add(getBiases()[i-1]);  //W*a +b
+/*			if (i != numberOfLayers-1){
 				z[i] = addBias(z[i]); //add bias column
-			}
+			}*/
 			a[i] = sigmoid(z[i]);//sigmoid(W*a)
 
 			printDimensions(a[i]);
@@ -74,7 +78,7 @@ public class NeuralNetwork {
 			printDimensions(delta[i]);
 
 		}
-		
+		System.out.println("gradients");
 		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
 			gradients[i] = a[i].transpose().multiply(delta[i+1]);
 			printDimensions(gradients[i]);
@@ -192,6 +196,14 @@ public class NeuralNetwork {
 
 	public void setTraining_outputs(Matrix training_outputs) {
 		this.training_outputs = training_outputs;
+	}
+
+	public Matrix[] getBiases() {
+		return biases;
+	}
+
+	public void setBiases(Matrix[] biases) {
+		this.biases = biases;
 	}
 	
 

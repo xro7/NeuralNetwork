@@ -26,7 +26,7 @@ public class Main {
 		//Matrix y = rawValuesToVector(y_raw,12);
 
 		//printDimensions(y_raw);
-		x = addBias(x);
+		//x = addBias(x);
 		//printDimensions(x);
 	
 /*		ProcessInputs pi2 = new ProcessInputs(7767,561,"data/train/Y_train.txt");
