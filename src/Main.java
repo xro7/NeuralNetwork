@@ -19,8 +19,8 @@ public class Main {
 		
 
 		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
-		ProcessInputs pi = new ProcessInputs(30,7,"data/train/X_train.txt");
-		ProcessInputs pi2 = new ProcessInputs(30,1,"data/train/Y_train.txt");
+		ProcessInputs pi = new ProcessInputs(6000,500,"data/train/X_train.txt");
+		ProcessInputs pi2 = new ProcessInputs(6000,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
 		Matrix y_raw = pi2.getInputs();
 		//Matrix y = rawValuesToVector(y_raw,12);
@@ -33,7 +33,7 @@ public class Main {
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{7,4,12},x,y_raw);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{500,80,12},x,y_raw);
 		//printDimensions(nn.getWeights()[0]);
 		
 		
@@ -43,23 +43,16 @@ public class Main {
 		
 	}
 	
-	private static Matrix rawValuesToVector(Matrix m, int sizeVector){
-		Matrix y = Matrix.zero(m.rows(), sizeVector) ;
-		for (int i = 0; i < m.rows(); i++) {
-			y.set(i,(int) m.get(i,0)-1,1.0);
-		}
-		return y;
-	}
 	
 	public static void printDimensions(Matrix m){
 		System.out.println(m);
 		System.out.println("Diamensions of matrix are "+m.rows()+"X"+m.columns() );
 	}
 	
-	private static Matrix  addBias(Matrix m){
+/*	private static Matrix  addBias(Matrix m){
 		m = m.insertColumn(0, Vector.constant(m.rows(), 1.0));
 		return m;
-	}
+	}*/
 	
 /*	private static Matrix sigmoidPrime(Matrix z){
 		Matrix prime = z.hadamardProduct((z));

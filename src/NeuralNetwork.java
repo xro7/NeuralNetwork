@@ -26,9 +26,10 @@ public class NeuralNetwork {
 			randomInit(this.biases[i]);
 			//printDimensions(this.weights[i]);
 		}
-		feedforward();
-		costFunction();
-		backpropagation(getTraining_inputs().getRow(0).toRowMatrix(),getTraining_outputs().getRow(0).toRowMatrix());
+		//feedforward();
+		//costFunction();
+		//backpropagation(getTraining_inputs().getRow(0).toRowMatrix(),getTraining_outputs().getRow(0).toRowMatrix());
+		gd(100,5,0.1);
 		
 	}
 	
@@ -36,54 +37,105 @@ public class NeuralNetwork {
 		
 		activations = new Matrix[layers.length];// first layer is the inputs
 		activations[0] = getTraining_inputs().copy();
+		//create arrays for biases x*getBiases()[j].columns() dimentsions to be able to add them
+		Matrix[] bias = new Matrix[layers.length-1];
+		for(int j =0;j<layers.length-1;j++){
+			bias[j] = Matrix.zero(getTraining_inputs().rows(),getBiases()[j].columns());
+			for(int i =0;i<getTraining_inputs().rows();i++){
+				bias[j].setRow(i, getBiases()[j].getRow(0));
+			}
+		}
 
 		for (int i = 1; i < numberOfLayers ; i++) {
-			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			getActivations()[i] = (getActivations()[i-1].multiply(getWeights()[i-1].transpose()));  //W*a + need to add bias b
-/*			if (i != numberOfLayers-1){
-				getActivations()[i] = addBias(getActivations()[i]); //add bias column
-			}*/
+			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer 
+			getActivations()[i] = (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//W*a b
 			sigmoid(getActivations()[i]);//sigmoid(W*a)
 			//printDimensions(getActivations()[i]);
 		}
 	}
 	
-	public void backpropagation(Matrix x, Matrix y){
+	public void gd(int epochs,int mini_batch_size,double eta/*.Matrix train_x,Matrix train_y*/){
+		
+		
+		
+		Matrix[][] accumulators = new Matrix[2][layers.length-1];
+		for (int j = 0; j < layers.length-1; j++) {
+			accumulators[0][j] =Matrix.zero(layers[j+1], layers[j]);
+			accumulators[1][j] =Matrix.zero(1, layers[j+1]);
+			
+		}
+		
+		for (int e = 0; e < epochs; e++) {
+			System.out.println("epoch: "+(e+1));
+			feedforward();
+			costFunction();
+			for(int i=0;i<getTraining_inputs().rows();i++){
+				Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
+				for (int j = 0; j < layers.length-1; j++) {
+					accumulators[0][j] = accumulators[0][j].add(grads[0][j].transpose());
+					accumulators[1][j] = accumulators[1][j].add(grads[1][j]);
+				}
+			}
+			//System.out.println(accumulators[0][0].get(0, 0));
+			
+			for (int j = 0; j < layers.length-1; j++) {
+				accumulators[0][j] = accumulators[0][j].multiply((double)1/getTraining_inputs().rows());
+				accumulators[1][j] = accumulators[1][j].multiply((double)1/getTraining_inputs().rows());
+			}
+			//System.out.println(accumulators[0][0].get(0, 0));
+			
+			for (int i = 0; i <layers.length-1; i++) {
+				weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
+				biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
+			}
+/*			printDimensions(accumulators[0][1]);
+			System.out.println(accumulators[0][1].get(0, 0));
+			printDimensions(accumulators[0][1].multiply(eta));
+			System.out.println(accumulators[0][1].multiply(eta).get(0, 0));*/
+		}
+		
+	}
+	
+	
+	
+	public Matrix[][] backpropagation(Matrix x, Matrix y){
 		//feed forward with one trainining set		
-		Matrix[] gradients = new Matrix[layers.length-1];
+		Matrix[][] gradients = new Matrix[2][layers.length-1];
+		//Matrix[] Wgradients = new Matrix[layers.length-1];
+		//Matrix[] Bgradients = new Matrix[layers.length-1];
 		Matrix[] a = new Matrix[layers.length];
 		Matrix[] z = new Matrix[layers.length];//z[0] remains unitilized
 		Matrix[] delta = new Matrix[layers.length]; //there is no error in layer 0
-		System.out.println("activations");
+		//System.out.println("activations");
 		a[0] = x;
-		printDimensions(a[0]);
+		//printDimensions(a[0]);
 		for (int i = 1; i < numberOfLayers ; i++) {
-			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
+			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer 
 			z[i] = (a[i-1].multiply(getWeights()[i-1].transpose())).add(getBiases()[i-1]);  //W*a +b
-/*			if (i != numberOfLayers-1){
-				z[i] = addBias(z[i]); //add bias column
-			}*/
-			a[i] = sigmoid(z[i]);//sigmoid(W*a)
+			a[i] = sigmoid(z[i]);//sigmoid(z)
 
-			printDimensions(a[i]);
+			//printDimensions(a[i]);
 		}
 		
 		//find deltas
-		System.out.println("delta");
+		//System.out.println("delta");
 		delta[getNumberOfLayers()-1] = a[getNumberOfLayers()-1].subtract(y);
-		printDimensions(delta[getNumberOfLayers()-1]);
+		//printDimensions(delta[getNumberOfLayers()-1]);
 		for (int i = numberOfLayers-2; i >=1 ; i--) {
 			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			delta[i] = (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(z[i]));
-			printDimensions(delta[i]);
+			delta[i] = (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(z[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
+			//printDimensions(delta[i]);
 
 		}
-		System.out.println("gradients");
+		//System.out.println("gradients");
 		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
-			gradients[i] = a[i].transpose().multiply(delta[i+1]);
-			printDimensions(gradients[i]);
+			gradients[0][i] = a[i].transpose().multiply(delta[i+1]);// wGrad = a(i)*delta(i+1)
+			gradients[1][i] = delta[i+1];
+			//printDimensions(Wgradients[i]);
 
 		}
+		
+		return gradients;
 		
 		//printDimensions(y);
 		//printDimensions(delta[getNumberOfLayers()-1]);
@@ -93,14 +145,12 @@ public class NeuralNetwork {
 	public void costFunction(){
 		// least square cost
 		Matrix  m = getActivations()[getNumberOfLayers()-1].subtract(getTraining_outputs()); //a-y
-		m.each(new MatrixProcedure() {
-			
-			@Override
-			public void apply(int arg0, int arg1, double arg2) {
-				m.set(arg0, arg1,arg2*arg2);
-			}
-		});//(a-y)^2
-		System.out.println("Error:"+ m.sum()/(getTraining_inputs().rows()*2));//1/2n * sum((a-y)^2)
+		m = m.hadamardProduct(m);//(a-y)^2
+		double sum=0.0;
+		for (int i = 0; i < m.rows(); i++) {
+			sum= sum +m.getRow(i).sum();
+		}
+		System.out.println("Error:"+ sum/(getTraining_inputs().rows()*2));//1/2n * sum((a-y)^2)
 		//printDimensions(m);
 	}
 	
@@ -126,7 +176,7 @@ public class NeuralNetwork {
 	
 	private Matrix sigmoidPrime(Matrix z){
 		
-		Matrix prime = sigmoid(z).hadamardProduct(sigmoid(Matrix.constant(z.rows(), z.columns(), 1.0).subtract(z)));
+		Matrix prime = sigmoid(z).hadamardProduct(Matrix.constant(z.rows(), z.columns(), 1.0).subtract(sigmoid(z)));
 		return prime;
 	}
 	
