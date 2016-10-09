@@ -1,5 +1,4 @@
 import org.la4j.Vector;
-
 import org.la4j.Matrix;
 import org.la4j.matrix.DenseMatrix;
 import org.la4j.matrix.dense.Basic1DMatrix;
@@ -20,7 +19,7 @@ public class Main {
 		
 
 		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
-		ProcessInputs pi = new ProcessInputs(30,12,"data/train/X_train.txt");
+		ProcessInputs pi = new ProcessInputs(30,7,"data/train/X_train.txt");
 		ProcessInputs pi2 = new ProcessInputs(30,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
 		Matrix y_raw = pi2.getInputs();
@@ -34,12 +33,12 @@ public class Main {
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{12,4,12},x,y_raw);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{7,4,12},x,y_raw);
 		//printDimensions(nn.getWeights()[0]);
 		
 		
 		
-		
+		//printDimensions(sigmoidPrime(Matrix.constant(3, 4, 3)));
 		
 		
 	}
@@ -61,6 +60,21 @@ public class Main {
 		m = m.insertColumn(0, Vector.constant(m.rows(), 1.0));
 		return m;
 	}
+	
+/*	private static Matrix sigmoidPrime(Matrix z){
+		Matrix prime = z.hadamardProduct((z));
+		return prime;
+	}
+	private static Matrix sigmoid(Matrix t){
+		Matrix sig =  Matrix.constant(t.rows(), t.columns(), 0.0);
+		for (int i = 0; i < t.rows(); i++) {
+			for (int j = 0; j < t.columns(); j++) {
+				sig.set(i, j, 1.0 / (1.0 + Math.exp(-t.get(i,j))));
+			}
+		}
+		return(sig);
+		
+	}*/
 	
 
 
