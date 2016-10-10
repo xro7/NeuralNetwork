@@ -8,7 +8,6 @@ import org.la4j.Vector;
 public class Main {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		
 /*		Matrix x = Matrix.from2DArray(new double[][]{{1,2},{1,2},{1,2}});
 		System.out.println(x);
@@ -22,10 +21,9 @@ public class Main {
 		try {
 			images = m.loadDigitImages();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		int train_size = 5000;
+		int train_size = 20000;
 		Matrix x = Matrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			Vector v = Vector.fromArray(images.get(i).getData());
@@ -40,10 +38,9 @@ public class Main {
 		try {
 			images2 = m2.loadDigitImages();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		int test_size = 500;
+		int test_size = 1000;
 		Matrix test_x = Matrix.zero(test_size , 784);
 		for (int i = 0; i < test_size ; i++) {
 			Vector v = Vector.fromArray(images2.get(i).getData());
@@ -60,23 +57,10 @@ public class Main {
 		ProcessInputs pi2 = new ProcessInputs(5000,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
 		Matrix y_raw = pi2.getInputs();
-		//Matrix y = rawValuesToVector(y_raw,12);
 */
-		//printDimensions(y_raw);
-		//x = addBias(x);
-		//printDimensions(x);
-	
-/*		ProcessInputs pi2 = new ProcessInputs(7767,561,"data/train/Y_train.txt");
-		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
-		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
-		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
+		
 		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y,test_x,test_y);
-		//printDimensions(nn.getWeights()[0]);
-		
-		
-		
-		//printDimensions(sigmoidPrime(Matrix.constant(3, 4, 3)));
-		
+
 		
 	}
 	

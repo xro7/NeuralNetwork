@@ -30,7 +30,7 @@ public class NeuralNetwork {
 			//printDimensions(this.weights[i]);
 		}
 
-		sgd(30,10,0.001);
+		sgd(30,10,0.1);
 		
 	}
 	
@@ -57,7 +57,7 @@ public class NeuralNetwork {
 	
 	public void gd(int epochs,int mini_batch_size,double eta/*.Matrix train_x,Matrix train_y*/){
 		
-	
+		System.out.println(evaluate()+" /"+test_inputs.rows());
 		for (int e = 0; e < epochs; e++) {
 			
 			Matrix[][] accumulators = new Matrix[2][layers.length-1];
@@ -68,8 +68,7 @@ public class NeuralNetwork {
 			}
 			
 			System.out.println("epoch: "+(e+1));
-			feedforward(getTraining_inputs());
-			costFunction();
+
 			for(int i=0;i<getTraining_inputs().rows();i++){
 				Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
 				for (int j = 0; j < layers.length-1; j++) {
@@ -89,10 +88,7 @@ public class NeuralNetwork {
 				weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
 				biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
 			}
-/*			printDimensions(accumulators[0][1]);
-			System.out.println(accumulators[0][1].get(0, 0));
-			printDimensions(accumulators[0][1].multiply(eta));
-			System.out.println(accumulators[0][1].multiply(eta).get(0, 0));*/
+			System.out.println(evaluate()+" /"+test_inputs.rows());
 		}
 		
 	}
