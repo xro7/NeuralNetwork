@@ -1,11 +1,9 @@
-import org.la4j.Vector;
+
+import java.io.IOException;
+import java.util.List;
+
 import org.la4j.Matrix;
-import org.la4j.matrix.DenseMatrix;
-import org.la4j.matrix.dense.Basic1DMatrix;
-import org.la4j.matrix.dense.Basic2DMatrix;
-import org.la4j.matrix.functor.MatrixProcedure;
-import org.la4j.vector.DenseVector;
-import org.la4j.vector.dense.BasicVector;
+import org.la4j.Vector;
 
 public class Main {
 
@@ -16,15 +14,34 @@ public class Main {
 		System.out.println(x);
 		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
 		System.out.println(x);*/
+		List<DigitImage> images =null;
+		Mnist m = new Mnist("data/train-labels.idx1-ubyte","data/train-images.idx3-ubyte");
+		try {
+			images = m.loadDigitImages();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int size = 5000;
+		Matrix x = Matrix.zero(size, 784);
+		for (int i = 0; i < size; i++) {
+			Vector v = Vector.fromArray(images.get(i).getData());
+			x.setRow(i, v);
+		}
 		
-
-		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
-		ProcessInputs pi = new ProcessInputs(6000,500,"data/train/X_train.txt");
-		ProcessInputs pi2 = new ProcessInputs(6000,1,"data/train/Y_train.txt");
+		Matrix y = Matrix.zero(size, 1);
+		for (int i = 0; i < size; i++) {
+			images.get(i).getData();
+			y.setRow(i, images.get(i).getLabel());
+		}
+		
+/*		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
+		ProcessInputs pi = new ProcessInputs(5000,561,"data/train/X_train.txt");
+		ProcessInputs pi2 = new ProcessInputs(5000,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
 		Matrix y_raw = pi2.getInputs();
 		//Matrix y = rawValuesToVector(y_raw,12);
-
+*/
 		//printDimensions(y_raw);
 		//x = addBias(x);
 		//printDimensions(x);
@@ -33,7 +50,7 @@ public class Main {
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{500,80,12},x,y_raw);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y);
 		//printDimensions(nn.getWeights()[0]);
 		
 		
