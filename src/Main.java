@@ -15,26 +15,46 @@ public class Main {
 		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
 		System.out.println(x);*/
 		List<DigitImage> images =null;
+		List<DigitImage> images2 =null;
 		Mnist m = new Mnist("data/train-labels.idx1-ubyte","data/train-images.idx3-ubyte");
+		Mnist m2 = new Mnist("data/t10k-labels.idx1-ubyte","data/t10k-images.idx3-ubyte");
+		
 		try {
 			images = m.loadDigitImages();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		int size = 5000;
-		Matrix x = Matrix.zero(size, 784);
-		for (int i = 0; i < size; i++) {
+		int train_size = 5000;
+		Matrix x = Matrix.zero(train_size , 784);
+		for (int i = 0; i < train_size ; i++) {
 			Vector v = Vector.fromArray(images.get(i).getData());
 			x.setRow(i, v);
 		}
 		
-		Matrix y = Matrix.zero(size, 1);
-		for (int i = 0; i < size; i++) {
-			images.get(i).getData();
+		Matrix y = Matrix.zero(train_size , 1);
+		for (int i = 0; i < train_size ; i++) {
 			y.setRow(i, images.get(i).getLabel());
 		}
 		
+		try {
+			images2 = m2.loadDigitImages();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int test_size = 500;
+		Matrix test_x = Matrix.zero(test_size , 784);
+		for (int i = 0; i < test_size ; i++) {
+			Vector v = Vector.fromArray(images2.get(i).getData());
+			test_x.setRow(i, v);
+		}
+		
+		Matrix test_y = Matrix.zero(test_size , 1);
+		for (int i = 0; i < test_size ; i++) {
+			test_y.setRow(i, images2.get(i).getLabel());
+		}
+		System.out.println("Done reading images");
 /*		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
 		ProcessInputs pi = new ProcessInputs(5000,561,"data/train/X_train.txt");
 		ProcessInputs pi2 = new ProcessInputs(5000,1,"data/train/Y_train.txt");
@@ -50,7 +70,7 @@ public class Main {
 		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
 		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");*/
 		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,20,1});
-		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y,test_x,test_y);
 		//printDimensions(nn.getWeights()[0]);
 		
 		
