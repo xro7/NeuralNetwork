@@ -1,5 +1,8 @@
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import org.la4j.Matrix;
@@ -7,13 +10,21 @@ import org.la4j.Vector;
 
 public class Main {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		
 /*		Matrix x = Matrix.from2DArray(new double[][]{{1,2},{1,2},{1,2}});
 		System.out.println(x);
 		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
 		System.out.println(x);*/
-
+		
+		Matrix x;
+		Matrix y;
+		Matrix test_x;
+		Matrix test_y;
+		
+		boolean fromCsv =true;
+		//if( !fromCsv){
+		double start = System.nanoTime();  
 		List<DigitImage> images =null;
 		List<DigitImage> images2 =null;
 		Mnist m = new Mnist("data/train-labels.idx1-ubyte","data/train-images.idx3-ubyte");
@@ -24,15 +35,21 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 3000;
-		Matrix x = Matrix.zero(train_size , 784);
+		int train_size = 20000;
+		x = Matrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
+			if(i%100==0){
+				System.out.println(i);
+			}
 			Vector v = Vector.fromArray(images.get(i).getData());
 			x.setRow(i, v);
 		}
 		
-		Matrix y = Matrix.zero(train_size , 1);
+		y = Matrix.zero(train_size , 1);
 		for (int i = 0; i < train_size ; i++) {
+			if(i%100==0){
+				System.out.println(i);
+			}
 			y.setRow(i, images.get(i).getLabel());
 		}
 		
@@ -41,24 +58,65 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int test_size = 300;
-		Matrix test_x = Matrix.zero(test_size , 784);
+		int test_size = 10000;
+		test_x = Matrix.zero(test_size , 784);
 		for (int i = 0; i < test_size ; i++) {
+			if(i%100==0){
+				System.out.println(i);
+			}
 			Vector v = Vector.fromArray(images2.get(i).getData());
 			test_x.setRow(i, v);
 		}
 		
-		Matrix test_y = Matrix.zero(test_size , 1);
+		test_y = Matrix.zero(test_size , 1);
 		for (int i = 0; i < test_size ; i++) {
+			if(i%100==0){
+				System.out.println(i);
+			}
 			test_y.setRow(i, images2.get(i).getLabel());
 		}
-		System.out.println("Done reading images");
+		double elapsedTime = System.nanoTime() - start;
+		System.out.println("Done reading images after "+ elapsedTime/1000000000+" seconds");
+
 /*		//ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
 		ProcessInputs pi = new ProcessInputs(5000,561,"data/train/X_train.txt");
 		ProcessInputs pi2 = new ProcessInputs(5000,1,"data/train/Y_train.txt");
 		Matrix x = pi.getInputs();
 		Matrix y_raw = pi2.getInputs();
 */
+/*		String xs = x.toCSV();
+		String ys = y.toCSV();
+		String test_xs = test_x.toCSV();
+		String test_ys = test_y.toCSV();
+
+		try {
+
+	         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("data/x.ser"));
+	         ObjectOutputStream out2 = new ObjectOutputStream(new FileOutputStream("data/y.ser"));
+	         ObjectOutputStream out3 = new ObjectOutputStream(new FileOutputStream("data/test_x.ser"));
+	         ObjectOutputStream out4 = new ObjectOutputStream(new FileOutputStream("data/test_y.ser"));
+	         out.writeObject(xs);
+	         out2.writeObject(ys);
+	         out3.writeObject(test_xs);
+	         out4.writeObject(test_ys);
+	         
+	         out.close();
+	         out2.close();
+	         out3.close();
+	         out4.close();
+	  
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		}else{
+			x =Matrix.fromCSV("data/x.ser");
+			y =Matrix.fromCSV("data/y.ser");
+			test_x =Matrix.fromCSV("data/test_x.ser");
+			test_y =Matrix.fromCSV("data/test_y.ser");
+			
+		}*/
+		
 		
 		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y,test_x,test_y);
 

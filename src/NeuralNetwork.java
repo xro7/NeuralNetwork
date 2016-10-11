@@ -17,6 +17,8 @@ public class NeuralNetwork {
 	public NeuralNetwork(int[] layers,Matrix x,Matrix y,Matrix test_x,Matrix test_y){
 		this.numberOfLayers = layers.length;
 		this.setLayers(layers);
+		this.activations = new Matrix[layers.length];
+		this.zeta = new Matrix[layers.length];
 		this.weights = new Matrix[numberOfLayers-1];
 		this.biases = new Matrix[numberOfLayers-1];
 		this.setTraining_inputs(x);
@@ -38,169 +40,20 @@ public class NeuralNetwork {
 	}
 	
 	public void feedforward(Matrix x){
-		
-		activations = new Matrix[layers.length];// first layer is the inputs
-		zeta = new Matrix[layers.length];
-		activations[0] = x;
-		//create arrays for biases x*getBiases()[j].columns() dimensions to be able to add them
+			
+		activations[0] = x;		
 		Matrix[] bias = new Matrix[layers.length-1];
-		for(int j =0;j<layers.length-1;j++){
-			bias[j] = Matrix.zero(x.rows(),getBiases()[j].columns());
-			for(int i =0;i<x.rows();i++){
-				bias[j].setRow(i, getBiases()[j].getRow(0));
-			}
-		}
 
 		for (int i = 1; i < numberOfLayers ; i++) {
-			//printDimensions(getWeights()[i-1].transpose());
-			//printDimensions(bias[i-1]);
-			
-			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer 
+
+			Matrix unary = Matrix.constant(getActivations()[i-1].rows(), 1, 1.0);
+			bias[i-1] = unary.multiply(getBiases()[i-1]);//need to make bias[i] from 1 X layers[i] to getActivations()[i-1].rows() X layers[i] so as to add it to z
 			zeta[i] = (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//z =W*a b
 			getActivations()[i] = sigmoid(getZeta()[i]);//sigmoid(z)
-			//printDimensions(getActivations()[i]);
-		}
-	}
-	
-	public void gd(int epochs,int mini_batch_size,double eta/*.Matrix train_x,Matrix train_y*/){
-		
-		System.out.println(evaluate()+" /"+test_inputs.rows());
-		for (int e = 0; e < epochs; e++) {
-			
-			Matrix[][] accumulators = new Matrix[2][layers.length-1];
-			for (int j = 0; j < layers.length-1; j++) {
-				accumulators[0][j] =Matrix.zero(layers[j+1], layers[j]);
-				accumulators[1][j] =Matrix.zero(1, layers[j+1]);
-				
-			}
-			
-			System.out.println("epoch: "+(e+1));
-
-			for(int i=0;i<getTraining_inputs().rows();i++){
-				Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
-				for (int j = 0; j < layers.length-1; j++) {
-					accumulators[0][j] = accumulators[0][j].add(grads[0][j].transpose());
-					accumulators[1][j] = accumulators[1][j].add(grads[1][j]);
-				}
-			}
-			//System.out.println(accumulators[0][0].get(0, 0));
-			
-			for (int j = 0; j < layers.length-1; j++) {
-				accumulators[0][j] = accumulators[0][j].multiply((double)1/getTraining_inputs().rows());
-				accumulators[1][j] = accumulators[1][j].multiply((double)1/getTraining_inputs().rows());
-			}
-			//System.out.println(accumulators[0][0].get(0, 0));
-			
-			for (int i = 0; i <layers.length-1; i++) {
-				weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
-				biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
-			}
-			System.out.println(evaluate()+" /"+test_inputs.rows());
-		}
-		
-	}
-	
-	public void sgd(int epochs,int mini_batch_size,double eta/*.Matrix train_x,Matrix train_y*/){
-		
-		
-		System.out.println(evaluate()+" /"+test_inputs.rows());//evaluate test set with random weights
-		int batches = getTraining_inputs().rows() / mini_batch_size;//number of batches		 
-		Matrix[][] accumulators = new Matrix[2][layers.length-1];
-
-		for (int e = 0; e < epochs; e++) {
-			
-			System.out.println("epoch: "+(e+1));
-			double start = System.nanoTime();   
-						
-			for (int b = 0; b < batches; b++) {
-
-				//initialize gradient accumulators for every batch
-				for (int j = 0; j < layers.length-1; j++) {
-					accumulators[0][j] =Matrix.zero(layers[j+1], layers[j]);
-					accumulators[1][j] =Matrix.zero(1, layers[j+1]);
-					
-				}	
-		
-				//backpropagation for every x,y in mini_batch
-				for(int i=mini_batch_size*b;i<mini_batch_size*(b+1);i++){
-					Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
-					for (int j = 0; j < layers.length-1; j++) {
-						accumulators[0][j] = accumulators[0][j].add(grads[0][j].transpose());
-						accumulators[1][j] = accumulators[1][j].add(grads[1][j]);
-					}
-				}
-				
-
-				
-				//divide gradients by 1/mini_batch_size
-				for (int j = 0; j < layers.length-1; j++) {
-					accumulators[0][j] = accumulators[0][j].multiply((double)1/mini_batch_size);
-					accumulators[1][j] = accumulators[1][j].multiply((double)1/mini_batch_size);
-				}
-				
-				//update weights and bias subtracting the gradients multiplied by learning rate
-				for (int i = 0; i <layers.length-1; i++) {
-					weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
-					biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
-				}
-				
-			}
-			
-			double elapsedTime = System.nanoTime() - start;
-			System.out.println(elapsedTime/1000000000+" seconds for this epoch");
-			System.out.println(evaluate()+" /"+test_inputs.rows());
 
 		}
 		
-	}
-	
-
-	
-
-	public Matrix[][] backpropagation(Matrix x, Matrix y){
-		//feed forward with one trainining set		
-		Matrix[][] gradients = new Matrix[2][layers.length-1];// for weights and bias
-		Matrix[] a = new Matrix[layers.length];
-		Matrix[] z = new Matrix[layers.length];//z[0] remains unitilized
-		Matrix[] delta = new Matrix[layers.length]; //there is no error in layer 0
-		//System.out.println("activations");
-		a[0] = x;
-		//printDimensions(a[0]);
-		for (int i = 1; i < numberOfLayers ; i++) {
-			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer 
-			z[i] = (a[i-1].multiply(getWeights()[i-1].transpose())).add(getBiases()[i-1]);  //W*a +b
-			a[i] = sigmoid(z[i]);//sigmoid(z)
-
-			//printDimensions(a[i]);
-		}
-		
-		//find deltas
-		//System.out.println("delta");
-		delta[getNumberOfLayers()-1] = a[getNumberOfLayers()-1].subtract(y);
-		//printDimensions(delta[getNumberOfLayers()-1]);
-		for (int i = numberOfLayers-2; i >=1 ; i--) {
-			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			delta[i] = (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(z[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
-			//printDimensions(delta[i]);
-
-		}
-		//System.out.println("gradients");
-		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
-			gradients[0][i] = a[i].transpose().multiply(delta[i+1]);// wGrad = a(i)*delta(i+1)
-			gradients[1][i] = delta[i+1];
-			//printDimensions(Wgradients[i]);
-
-		}
-		
-
-		
-		return gradients;
-		
-		//printDimensions(y);
-		//printDimensions(delta[getNumberOfLayers()-1]);
-		
-	}
-	
+	}		
 	
 	public void sgd2(int epochs,int mini_batch_size,double eta/*.Matrix train_x,Matrix train_y*/){
 		
@@ -217,11 +70,9 @@ public class NeuralNetwork {
 			for (int b = 0; b < batches; b++) {
 				Matrix x = getTraining_inputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_inputs().columns());
 				Matrix y = getTraining_outputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_outputs().columns());
-		
 
 				accumulators = backpropagationVersion2(x, y);
-
-				
+	
 				//divide gradients by 1/mini_batch_size
 				for (int j = 0; j < layers.length-1; j++) {
 					accumulators[0][j] = accumulators[0][j].multiply((double)1/mini_batch_size);
@@ -232,8 +83,7 @@ public class NeuralNetwork {
 				for (int i = 0; i <layers.length-1; i++) {
 					weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta).transpose());
 					biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
-				}
-				
+				}			
 			}
 			
 			double elapsedTime = System.nanoTime() - start;
@@ -252,26 +102,23 @@ public class NeuralNetwork {
 		Matrix[] delta = new Matrix[layers.length];
 		
 		//find deltas
-		//printDimensions(getActivations()[getNumberOfLayers()-1]);
-		//printDimensions(y);
 		delta[getNumberOfLayers()-1] = getActivations()[getNumberOfLayers()-1].subtract(y);
-		//printDimensions(delta[getNumberOfLayers()-1]);
+
 		for (int i = numberOfLayers-2; i >=1 ; i--) {
 			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
 			delta[i] = (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(getZeta()[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
-			//printDimensions(delta[i]);
+
 
 		}
 		//System.out.println("gradients");
 		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
 			gradients[0][i] = getActivations()[i].transpose().multiply(delta[i+1]);// wGrad = a(i)*delta(i+1)
-			//gradients[1][i] = delta[i+1];
-			//printDimensions(gradients[0][i]);
-			//printDimensions(gradients[1][i]);
+			//gradients[1][i] = delta[i+1];add it below cause need to have 1 row
+
 		}
 		
 		
-		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
+/*		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
 			gradients[1][i] = Matrix.zero(1, delta[i+1].columns());
 
 			for (int j = 0; j < delta[i+1].rows(); j++) {
@@ -279,18 +126,24 @@ public class NeuralNetwork {
 				gradients[1][i] = gradients[1][i].add(delta[i+1].getRow(j).toRowMatrix());
 				
 			}
+		}*/
+		
+		//multiply delta with unary array to make each row add to each other and get an 1Xdelta[i+1].colums() dimensional gradient
+		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
+			Matrix unary = Matrix.unit(1, delta[i+1].rows());
+			gradients[1][i] = unary.multiply(delta[i+1]);
 		}
 		
 		return gradients;
 		
-		//printDimensions(y);
-		//printDimensions(delta[getNumberOfLayers()-1]);
-		
 	}
 	
 	public int evaluate(){
-		double start = System.nanoTime();   
+		double start = System.nanoTime();
 		feedforward(test_inputs);
+		double elapsedTime = System.nanoTime() - start;
+		System.out.println(elapsedTime/1000000000+" seconds feedforward");
+		double start2 = System.nanoTime(); 
 		int corrects = 0;
 		for (int j = 0; j < getActivations()[getNumberOfLayers()-1].rows(); j++) {
 			
@@ -302,8 +155,8 @@ public class NeuralNetwork {
 			}
 		
 		}
-		double elapsedTime = System.nanoTime() - start;
-		System.out.println(elapsedTime/1000000000+" seconds evaluation");
+		double elapsedTime2 = System.nanoTime() - start2;
+		System.out.println(elapsedTime2/1000000000+" seconds evaluation");
 		return(corrects);
 		
 	}
@@ -442,6 +295,142 @@ public class NeuralNetwork {
 		this.zeta = zeta;
 	}
 	
+	
+/*	public void gd(int epochs,int mini_batch_size,double eta.Matrix train_x,Matrix train_y){
+		
+		System.out.println(evaluate()+" /"+test_inputs.rows());
+		for (int e = 0; e < epochs; e++) {
+			
+			Matrix[][] accumulators = new Matrix[2][layers.length-1];
+			for (int j = 0; j < layers.length-1; j++) {
+				accumulators[0][j] =Matrix.zero(layers[j+1], layers[j]);
+				accumulators[1][j] =Matrix.zero(1, layers[j+1]);
+				
+			}
+			
+			System.out.println("epoch: "+(e+1));
+
+			for(int i=0;i<getTraining_inputs().rows();i++){
+				Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
+				for (int j = 0; j < layers.length-1; j++) {
+					accumulators[0][j] = accumulators[0][j].add(grads[0][j].transpose());
+					accumulators[1][j] = accumulators[1][j].add(grads[1][j]);
+				}
+			}
+			//System.out.println(accumulators[0][0].get(0, 0));
+			
+			for (int j = 0; j < layers.length-1; j++) {
+				accumulators[0][j] = accumulators[0][j].multiply((double)1/getTraining_inputs().rows());
+				accumulators[1][j] = accumulators[1][j].multiply((double)1/getTraining_inputs().rows());
+			}
+			//System.out.println(accumulators[0][0].get(0, 0));
+			
+			for (int i = 0; i <layers.length-1; i++) {
+				weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
+				biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
+			}
+			System.out.println(evaluate()+" /"+test_inputs.rows());
+		}
+		
+	}
+	
+	public void sgd(int epochs,int mini_batch_size,double eta.Matrix train_x,Matrix train_y){
+		
+		
+		System.out.println(evaluate()+" /"+test_inputs.rows());//evaluate test set with random weights
+		int batches = getTraining_inputs().rows() / mini_batch_size;//number of batches		 
+		Matrix[][] accumulators = new Matrix[2][layers.length-1];
+
+		for (int e = 0; e < epochs; e++) {
+			
+			System.out.println("epoch: "+(e+1));
+			double start = System.nanoTime();   
+						
+			for (int b = 0; b < batches; b++) {
+
+				//initialize gradient accumulators for every batch
+				for (int j = 0; j < layers.length-1; j++) {
+					accumulators[0][j] =Matrix.zero(layers[j+1], layers[j]);
+					accumulators[1][j] =Matrix.zero(1, layers[j+1]);
+					
+				}	
+		
+				//backpropagation for every x,y in mini_batch
+				for(int i=mini_batch_size*b;i<mini_batch_size*(b+1);i++){
+					Matrix[][] grads = backpropagation(getTraining_inputs().getRow(i).toRowMatrix(),getTraining_outputs().getRow(i).toRowMatrix());
+					for (int j = 0; j < layers.length-1; j++) {
+						accumulators[0][j] = accumulators[0][j].add(grads[0][j].transpose());
+						accumulators[1][j] = accumulators[1][j].add(grads[1][j]);
+					}
+				}
+				
+
+				
+				//divide gradients by 1/mini_batch_size
+				for (int j = 0; j < layers.length-1; j++) {
+					accumulators[0][j] = accumulators[0][j].multiply((double)1/mini_batch_size);
+					accumulators[1][j] = accumulators[1][j].multiply((double)1/mini_batch_size);
+				}
+				
+				//update weights and bias subtracting the gradients multiplied by learning rate
+				for (int i = 0; i <layers.length-1; i++) {
+					weights[i] = weights[i].subtract(accumulators[0][i].multiply(eta));
+					biases[i] = biases[i].subtract(accumulators[1][i].multiply(eta));
+				}
+				
+			}
+			
+			double elapsedTime = System.nanoTime() - start;
+			System.out.println(elapsedTime/1000000000+" seconds for this epoch");
+			System.out.println(evaluate()+" /"+test_inputs.rows());
+
+		}
+		
+	}
+	
+	public Matrix[][] backpropagation(Matrix x, Matrix y){
+		//feed forward with one trainining set		
+		Matrix[][] gradients = new Matrix[2][layers.length-1];// for weights and bias
+		Matrix[] a = new Matrix[layers.length];
+		Matrix[] z = new Matrix[layers.length];//z[0] remains unitilized
+		Matrix[] delta = new Matrix[layers.length]; //there is no error in layer 0
+		//System.out.println("activations");
+		a[0] = x;
+		//printDimensions(a[0]);
+		for (int i = 1; i < numberOfLayers ; i++) {
+			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer 
+			z[i] = (a[i-1].multiply(getWeights()[i-1].transpose())).add(getBiases()[i-1]);  //W*a +b
+			a[i] = sigmoid(z[i]);//sigmoid(z)
+
+			//printDimensions(a[i]);
+		}
+		
+		//find deltas
+		//System.out.println("delta");
+		delta[getNumberOfLayers()-1] = a[getNumberOfLayers()-1].subtract(y);
+		//printDimensions(delta[getNumberOfLayers()-1]);
+		for (int i = numberOfLayers-2; i >=1 ; i--) {
+			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
+			delta[i] = (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(z[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
+			//printDimensions(delta[i]);
+
+		}
+		//System.out.println("gradients");
+		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
+			gradients[0][i] = a[i].transpose().multiply(delta[i+1]);// wGrad = a(i)*delta(i+1)
+			gradients[1][i] = delta[i+1];
+			//printDimensions(Wgradients[i]);
+
+		}
+		
+
+		
+		return gradients;
+		
+		//printDimensions(y);
+		//printDimensions(delta[getNumberOfLayers()-1]);
+		
+	}*/
 
 
 }
