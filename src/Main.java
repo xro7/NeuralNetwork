@@ -13,6 +13,7 @@ public class Main {
 		System.out.println(x);
 		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
 		System.out.println(x);*/
+
 		List<DigitImage> images =null;
 		List<DigitImage> images2 =null;
 		Mnist m = new Mnist("data/train-labels.idx1-ubyte","data/train-images.idx3-ubyte");
@@ -23,7 +24,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 20000;
+		int train_size = 3000;
 		Matrix x = Matrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			Vector v = Vector.fromArray(images.get(i).getData());
@@ -40,7 +41,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int test_size = 1000;
+		int test_size = 300;
 		Matrix test_x = Matrix.zero(test_size , 784);
 		for (int i = 0; i < test_size ; i++) {
 			Vector v = Vector.fromArray(images2.get(i).getData());
