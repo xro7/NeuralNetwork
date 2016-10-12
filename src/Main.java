@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import org.la4j.Matrix;
 import org.la4j.Vector;
+import org.la4j.matrix.DenseMatrix;
 
 
 public class Main {
@@ -16,10 +17,10 @@ public class Main {
 		System.out.println(x);*/
 		
 		
-		Matrix x;
-		Matrix y;
-		Matrix test_x;
-		Matrix test_y;
+		DenseMatrix x;
+		DenseMatrix y;
+		DenseMatrix test_x;
+		DenseMatrix test_y;
 		
 		boolean fromCsv =true;
 		//if( !fromCsv){
@@ -34,8 +35,8 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 1000;
-		x = Matrix.zero(train_size , 784);
+		int train_size = 60000;
+		x = DenseMatrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			if(i%100==0){
 				System.out.println(i);
@@ -44,7 +45,7 @@ public class Main {
 			x.setRow(i, v);
 		}
 		
-		y = Matrix.zero(train_size , 1);
+		y = DenseMatrix.zero(train_size , 1);
 		for (int i = 0; i < train_size ; i++) {
 			if(i%100==0){
 				System.out.println(i);
@@ -57,8 +58,8 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int test_size = 500;
-		test_x = Matrix.zero(test_size , 784);
+		int test_size = 10000;
+		test_x = DenseMatrix.zero(test_size , 784);
 		for (int i = 0; i < test_size ; i++) {
 			if(i%100==0){
 				System.out.println(i);
@@ -67,7 +68,7 @@ public class Main {
 			test_x.setRow(i, v);
 		}
 		
-		test_y = Matrix.zero(test_size , 1);
+		test_y = DenseMatrix.zero(test_size , 1);
 		for (int i = 0; i < test_size ; i++) {
 			if(i%100==0){
 				System.out.println(i);
