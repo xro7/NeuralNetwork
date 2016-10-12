@@ -34,32 +34,25 @@ public class NeuralNetwork {
 			randomInit(this.biases[i]);
 		}
 
-		sgd2(30,20,0.1,new CrossEntropyCostFunction(),false);
+		sgd(30,10,0.1,new CrossEntropyCostFunction(0.1),true,0.5);
 		
 	
 	}
 	
-	public double[] feedforward(DenseMatrix x){
+	public void feedforward(DenseMatrix x){
 		
 		activations[0] = x;		
 		DenseMatrix[] bias = new DenseMatrix[layers.length-1];
-		double start;
-		double[] elapsedTime = new double[numberOfLayers-1];
 		for (int i = 1; i < numberOfLayers ; i++) {
 			
 			DenseMatrix unary = DenseMatrix.unit(getActivations()[i-1].rows(), 1);
 			bias[i-1] = (DenseMatrix) unary.multiply(getBiases()[i-1]);//need to make bias[i] from 1 X layers[i] to getActivations()[i-1].rows() X layers[i] so as to add it to z
-			start = System.nanoTime();
 			zeta[i] = (DenseMatrix) (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//z =W*a b			
 			getActivations()[i] = sigmoid(getZeta()[i]);//sigmoid(z)
-			elapsedTime[i-1] = System.nanoTime() - start;
-		}
-		
-		return elapsedTime;
-		
+		}			
 	}		
 	
-	public void sgd2(int epochs,int mini_batch_size,double eta,CostFunction cost,boolean printCost){
+	public void sgd(int epochs,int mini_batch_size,double eta,CostFunction cost,boolean printCost,double lambda){
 		
 		if (printCost){
 			feedforward(getTraining_inputs());
@@ -79,7 +72,7 @@ public class NeuralNetwork {
 				DenseMatrix x = (DenseMatrix) getTraining_inputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_inputs().columns());
 				DenseMatrix y = (DenseMatrix) getTraining_outputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_outputs().columns());
 
-				accumulators = backpropagationVersion2(x, y,cost);
+				accumulators = backpropagation(x, y,cost);
 	
 				//divide gradients by 1/mini_batch_size
 				for (int j = 0; j < layers.length-1; j++) {
@@ -89,7 +82,7 @@ public class NeuralNetwork {
 				
 				//update weights and bias subtracting the gradients multiplied by learning rate
 				for (int i = 0; i <layers.length-1; i++) {
-					weights[i] = (DenseMatrix) weights[i].subtract(accumulators[0][i].multiply(eta).transpose());
+					weights[i] = (DenseMatrix) (weights[i].multiply(1-((cost.getLambda()*eta)/getTraining_inputs().rows()))).subtract(accumulators[0][i].multiply(eta).transpose());
 					biases[i] = (DenseMatrix) biases[i].subtract(accumulators[1][i].multiply(eta));
 				}			
 			}
@@ -100,7 +93,7 @@ public class NeuralNetwork {
 			}
 			
 			double elapsedTime = System.nanoTime() - start;
-			System.out.println(elapsedTime/1000000000+" seconds for this epoch");
+			System.out.println(elapsedTime/1000000000+" seconds for this training epoch");
 			System.out.println(evaluate()+" /"+test_inputs.rows());
 
 		}
@@ -108,7 +101,7 @@ public class NeuralNetwork {
 		
 	}
 	
-	public DenseMatrix[][] backpropagationVersion2(DenseMatrix x, DenseMatrix y,CostFunction cost){
+	public DenseMatrix[][] backpropagation(DenseMatrix x, DenseMatrix y,CostFunction cost){
 		//feed forward 	
 		feedforward(x);
 		
@@ -143,11 +136,7 @@ public class NeuralNetwork {
 	}
 	
 	public int evaluate(){
-		//double start = System.nanoTime();
-		double[] time = feedforward(test_inputs);
-		//double elapsedTime = System.nanoTime() - start;
-	    //System.out.println(elapsedTime/1000000000+" seconds feedforward");
-		double start2 = System.nanoTime(); 
+		feedforward(test_inputs);
 		int corrects = 0;
 		for (int j = 0; j < getActivations()[getNumberOfLayers()-1].rows(); j++) {
 			
@@ -159,12 +148,6 @@ public class NeuralNetwork {
 			}
 		
 		}
-		double elapsedTime2 = System.nanoTime() - start2;
-		for (int i = 0; i < time.length; i++) {
-			System.out.println(time[i]/1000000000+" seconds feed forward at layer :"+i);
-		}
-		
-		System.out.println(elapsedTime2/1000000000+" seconds evaluation");
 		return(corrects);
 		
 	}
@@ -179,18 +162,6 @@ public class NeuralNetwork {
 			}
 		}
 		return position;
-	}
-	
-	public void costFunction(){
-		// least square cost
-		DenseMatrix  m = (DenseMatrix) getActivations()[getNumberOfLayers()-1].subtract(getTraining_outputs()); //a-y
-		m = (DenseMatrix) m.hadamardProduct(m);//(a-y)^2
-		double sum=0.0;
-		for (int i = 0; i < m.rows(); i++) {
-			sum= sum +m.getRow(i).sum();
-		}
-		System.out.println("Error:"+ sum/(getTraining_inputs().rows()*2));//1/2n * sum((a-y)^2)
-		//printDimensions(m);
 	}
 	
 	private static void randomInit(DenseMatrix matrix){
@@ -310,12 +281,19 @@ public class NeuralNetwork {
 	
 	public interface CostFunction{
 		
+		
 		public double cost(DenseMatrix a, DenseMatrix y);
 		public DenseMatrix delta(DenseMatrix a, DenseMatrix y, DenseMatrix z);
-			
+		public double getLambda();
 	}
 	
 	public class MeanSqueareErrorCostFunction implements CostFunction{
+		
+		private double lambda;
+		
+		public MeanSqueareErrorCostFunction(double lambda){
+			this.lambda = lambda;
+		}
 
 		@Override
 		public double cost(DenseMatrix a, DenseMatrix y) {
@@ -327,9 +305,15 @@ public class NeuralNetwork {
 			for (int i = 0; i < m.rows(); i++) {
 				sum= sum +m.getRow(i).sum();
 			}
-			cost = sum/2;//1/2n * sum((a-y)^2)
+			cost = sum/2;//1/2 * sum((a-y)^2)
+			double regsum = 0.0;
+			for (int i = 0; i < getNumberOfLayers()-1; i++) {
+				Matrix w = getWeights()[i].hadamardProduct(getWeights()[i]);
+				regsum  += w.sum ();
+			}
+			double regularazationPenalty = (lambda/(2*getTraining_inputs().rows())) *regsum ;
 			
-			return cost;
+			return cost+regularazationPenalty;
 		}
 
 		//delta for the last layer
@@ -342,15 +326,31 @@ public class NeuralNetwork {
 		public String toString() {
 			return "Mean Square Error Cost Function";
 		}
+		@Override
+		public double getLambda(){
+			return lambda;
+		}
 		
 	}
 	
 	public class CrossEntropyCostFunction implements CostFunction{
+		
+		private double lambda;
+		
+		public CrossEntropyCostFunction(double lambda){
+			this.lambda = lambda;
+		}
 
 		@Override
 		public double cost(DenseMatrix a, DenseMatrix y) {
-			DenseMatrix cost = (DenseMatrix) (negative((DenseMatrix) y.hadamardProduct(log(a)))).subtract((DenseMatrix.unit(y.rows(), y.columns()).subtract(y)).hadamardProduct(log((DenseMatrix) DenseMatrix.unit(a.rows(), a.columns()).subtract(a))));
-			return cost.sum();
+			DenseMatrix cost = (DenseMatrix) ((negative((DenseMatrix) y.hadamardProduct(log(a)))).subtract((DenseMatrix.unit(y.rows(), y.columns()).subtract(y)).hadamardProduct(log((DenseMatrix) DenseMatrix.unit(a.rows(), a.columns()).subtract(a)))));
+			double sum = 0.0;
+			for (int i = 0; i < getNumberOfLayers()-1; i++) {
+				Matrix w = getWeights()[i].hadamardProduct(getWeights()[i]);
+				sum += w.sum();
+			}
+			double regularazationPenalty = (lambda/(2*getTraining_inputs().rows())) *sum;
+			return cost.sum()+regularazationPenalty ;
 		}
 		//delta for the last layer
 		@Override
@@ -379,6 +379,10 @@ public class NeuralNetwork {
 		@Override
 		public String toString() {
 			return "Cross Entropy Cost Function";
+		}
+		@Override
+		public double getLambda(){
+			return lambda;
 		}
 	}
 	
