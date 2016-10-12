@@ -1,12 +1,10 @@
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.List;
-
 import org.la4j.Matrix;
 import org.la4j.Vector;
+
 
 public class Main {
 
@@ -16,6 +14,7 @@ public class Main {
 		System.out.println(x);
 		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
 		System.out.println(x);*/
+		
 		
 		Matrix x;
 		Matrix y;
@@ -35,7 +34,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 20000;
+		int train_size = 1000;
 		x = Matrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			if(i%100==0){
@@ -58,7 +57,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int test_size = 10000;
+		int test_size = 500;
 		test_x = Matrix.zero(test_size , 784);
 		for (int i = 0; i < test_size ; i++) {
 			if(i%100==0){
