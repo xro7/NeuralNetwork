@@ -30,11 +30,11 @@ public class NeuralNetwork {
 		for (int i = 0; i < numberOfLayers -1 ; i++) {
 			this.weights[i] = DenseMatrix.zero(layers[i+1], layers[i]);
 			this.biases[i] = DenseMatrix.zero(1, layers[i+1]);
-			randomInit(this.weights[i]);
-			randomInit(this.biases[i]);
+			randomInitWeights(this.weights[i]);
+			randomInitBiases(this.biases[i]);
 		}
 
-		sgd(30,10,0.1,new CrossEntropyCostFunction(0.1),true,0.5);
+		sgd(30,10,0.01,new CrossEntropyCostFunction(10.0),true);
 		
 	
 	}
@@ -52,7 +52,7 @@ public class NeuralNetwork {
 		}			
 	}		
 	
-	public void sgd(int epochs,int mini_batch_size,double eta,CostFunction cost,boolean printCost,double lambda){
+	public void sgd(int epochs,int mini_batch_size,double eta,CostFunction cost,boolean printCost){
 		
 		if (printCost){
 			feedforward(getTraining_inputs());
@@ -82,7 +82,7 @@ public class NeuralNetwork {
 				
 				//update weights and bias subtracting the gradients multiplied by learning rate
 				for (int i = 0; i <layers.length-1; i++) {
-					weights[i] = (DenseMatrix) (weights[i].multiply(1-((cost.getLambda()*eta)/getTraining_inputs().rows()))).subtract(accumulators[0][i].multiply(eta).transpose());
+					weights[i] = (DenseMatrix) (weights[i].multiply((1-eta*(cost.getLambda()/getTraining_inputs().rows())))).subtract(accumulators[0][i].multiply(eta).transpose());
 					biases[i] = (DenseMatrix) biases[i].subtract(accumulators[1][i].multiply(eta));
 				}			
 			}
@@ -164,7 +164,16 @@ public class NeuralNetwork {
 		return position;
 	}
 	
-	private static void randomInit(DenseMatrix matrix){
+	private static void randomInitWeights(DenseMatrix matrix){
+		java.util.Random r = new java.util.Random();
+		for (int i = 0; i < matrix.rows(); i++) {
+			for (int j = 0; j < matrix.columns(); j++) {
+				matrix.set(i, j, r.nextGaussian()/Math.sqrt(matrix.columns()));
+			}
+		}
+	}
+	
+	private static void randomInitBiases(DenseMatrix matrix){
 		java.util.Random r = new java.util.Random();
 		for (int i = 0; i < matrix.rows(); i++) {
 			for (int j = 0; j < matrix.columns(); j++) {
@@ -182,17 +191,9 @@ public class NeuralNetwork {
 				return 1.0 / (1.0 + Math.exp(-arg2));
 			}
 		});
-		
-/*		for (int i = 0; i < t.rows(); i++) {
-			for (int j = 0; j < t.columns(); j++) {
-				sig.set(i, j, 1.0 / (1.0 + Math.exp(-t.get(i,j))));
-			}
-		}*/
-
-		
+				
 		return(sig);
-		
-		
+	
 	}
 	
 	private DenseMatrix sigmoidPrime(DenseMatrix z){

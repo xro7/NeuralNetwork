@@ -34,7 +34,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 60000;
+		int train_size = 50000;
 		x = DenseMatrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			Vector v = Vector.fromArray(images.get(i).getData());
