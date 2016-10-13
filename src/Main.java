@@ -34,7 +34,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int train_size = 50000;
+		int train_size = 60000;
 		x = DenseMatrix.zero(train_size , 784);
 		for (int i = 0; i < train_size ; i++) {
 			Vector v = Vector.fromArray(images.get(i).getData());
@@ -46,8 +46,11 @@ public class Main {
 			y.setRow(i, images.get(i).getLabel());
 		}
 		
-	//	DenseMatrix training_set = (DenseMatrix) x.insertColumn(0, y.getColumn(0));
-	//	printDimensions(training_set);
+		DenseMatrix set = (DenseMatrix) x.insertColumn(0, y.getColumn(0));
+		DenseMatrix trainingSet = (DenseMatrix) set.sliceTopLeft(50000, set.columns());
+		DenseMatrix validationSet = (DenseMatrix) set.sliceBottomRight(50000, 0);
+		printDimensions(trainingSet);
+		printDimensions(validationSet);
 		
 		try {
 			images2 = m2.loadDigitImages();
@@ -65,18 +68,23 @@ public class Main {
 		for (int i = 0; i < test_size ; i++) {
 			test_y.setRow(i, images2.get(i).getLabel());
 		}
+		
+		DenseMatrix testSet = (DenseMatrix) test_x.insertColumn(0, test_y.getColumn(0));
+		printDimensions(testSet);
+		
 		double elapsedTime = System.nanoTime() - start;
+		
 		System.out.println("Done reading images after "+ elapsedTime/1000000000+" seconds");
 	
 		
-		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},x,y,test_x,test_y);
+		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},trainingSet,validationSet,testSet);
 
 		
 	}
 	
 	
 	public static void printDimensions(Matrix m){
-		System.out.println(m);
+		//System.out.println(m);
 		System.out.println("Diamensions of matrix are "+m.rows()+"X"+m.columns() );
 	}
 	

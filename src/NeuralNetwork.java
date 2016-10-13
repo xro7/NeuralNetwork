@@ -16,17 +16,21 @@ public class NeuralNetwork {
 	private DenseMatrix test_inputs;
 	private DenseMatrix test_outputs;
 	
-	public NeuralNetwork(int[] layers,DenseMatrix x,DenseMatrix y,DenseMatrix test_x,DenseMatrix test_y){
+	public NeuralNetwork(int[] layers,DenseMatrix trainSet,DenseMatrix validationSet,DenseMatrix testSet){
 		this.numberOfLayers = layers.length;
 		this.setLayers(layers);
 		this.activations = new DenseMatrix[layers.length];
 		this.zeta = new DenseMatrix[layers.length];
 		this.weights = new DenseMatrix[numberOfLayers-1];
 		this.biases = new DenseMatrix[numberOfLayers-1];
-		this.setTraining_inputs(x);
-		this.setTraining_outputs(rawValuesToVector(y, layers[numberOfLayers-1]));
-		this.test_inputs = test_x;
-		this.test_outputs = rawValuesToVector(test_y, layers[numberOfLayers-1]);
+/*		trainSet = (DenseMatrix) trainSet.s;
+		validationSet = (DenseMatrix) validationSet.shuffle();
+		testSet = (DenseMatrix) testSet.shuffle();	*/	
+		this.setTraining_outputs(rawValuesToVector((DenseMatrix) trainSet.getColumn(0).toColumnMatrix(), layers[numberOfLayers-1]));
+		this.setTraining_inputs((DenseMatrix) trainSet.removeFirstColumn());
+		this.test_outputs = rawValuesToVector((DenseMatrix) testSet.getColumn(0).toColumnMatrix(), layers[numberOfLayers-1]);
+		this.test_inputs = (DenseMatrix) testSet.removeFirstColumn();
+		
 		for (int i = 0; i < numberOfLayers -1 ; i++) {
 			this.weights[i] = DenseMatrix.zero(layers[i+1], layers[i]);
 			this.biases[i] = DenseMatrix.zero(1, layers[i+1]);
@@ -34,7 +38,7 @@ public class NeuralNetwork {
 			randomInitBiases(this.biases[i]);
 		}
 
-		sgd(30,10,0.001,new CrossEntropyCostFunction(10.0),new Sigmoid(),false);
+		sgd(30,10,0.001,new CrossEntropyCostFunction(15.0),new Sigmoid(),false);
 		
 	
 	}
