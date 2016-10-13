@@ -34,12 +34,12 @@ public class NeuralNetwork {
 			randomInitBiases(this.biases[i]);
 		}
 
-		sgd(30,10,0.01,new CrossEntropyCostFunction(10.0),true);
+		sgd(30,10,0.001,new CrossEntropyCostFunction(10.0),new Sigmoid(),false);
 		
 	
 	}
 	
-	public void feedforward(DenseMatrix x){
+	public void feedforward(DenseMatrix x,ActivationFunction activationFunction){
 		
 		activations[0] = x;		
 		DenseMatrix[] bias = new DenseMatrix[layers.length-1];
@@ -48,18 +48,18 @@ public class NeuralNetwork {
 			DenseMatrix unary = DenseMatrix.unit(getActivations()[i-1].rows(), 1);
 			bias[i-1] = (DenseMatrix) unary.multiply(getBiases()[i-1]);//need to make bias[i] from 1 X layers[i] to getActivations()[i-1].rows() X layers[i] so as to add it to z
 			zeta[i] = (DenseMatrix) (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//z =W*a b			
-			getActivations()[i] = sigmoid(getZeta()[i]);//sigmoid(z)
+			getActivations()[i] = activationFunction.activation(getZeta()[i]);//sigmoid(z)
 		}			
 	}		
 	
-	public void sgd(int epochs,int mini_batch_size,double eta,CostFunction cost,boolean printCost){
+	public void sgd(int epochs,int mini_batch_size,double eta,CostFunction cost,ActivationFunction activationFunction,boolean printTrainingCost){
 		
-		if (printCost){
-			feedforward(getTraining_inputs());
+		if (printTrainingCost){
+			feedforward(getTraining_inputs(),activationFunction);
 			System.out.println("Initial Cost of "+ cost.toString()+" is:" + cost.cost(getActivations()[getNumberOfLayers()-1], getTraining_outputs()));
 		}
 		
-		System.out.println(evaluate()+" /"+test_inputs.rows());//evaluate test set with random weights
+		System.out.println(evaluate(activationFunction)+" /"+test_inputs.rows());//evaluate test set with random weights
 		int batches = getTraining_inputs().rows() / mini_batch_size;//number of batches		 
 		DenseMatrix[][] accumulators = new DenseMatrix[2][layers.length-1];
 
@@ -72,7 +72,7 @@ public class NeuralNetwork {
 				DenseMatrix x = (DenseMatrix) getTraining_inputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_inputs().columns());
 				DenseMatrix y = (DenseMatrix) getTraining_outputs().slice(b*mini_batch_size, 0,(b+1)*mini_batch_size, getTraining_outputs().columns());
 
-				accumulators = backpropagation(x, y,cost);
+				accumulators = backpropagation(x, y,cost,activationFunction);
 	
 				//divide gradients by 1/mini_batch_size
 				for (int j = 0; j < layers.length-1; j++) {
@@ -87,33 +87,32 @@ public class NeuralNetwork {
 				}			
 			}
 			
-			if (printCost){
-				feedforward(getTraining_inputs());
+			if (printTrainingCost){
+				feedforward(getTraining_inputs(),activationFunction);
 				System.out.println("Cost of "+ cost.toString()+" is:" + cost.cost(getActivations()[getNumberOfLayers()-1], getTraining_outputs()));
 			}
 			
 			double elapsedTime = System.nanoTime() - start;
 			System.out.println(elapsedTime/1000000000+" seconds for this training epoch");
-			System.out.println(evaluate()+" /"+test_inputs.rows());
+			System.out.println(evaluate(activationFunction)+" /"+test_inputs.rows());
 
 		}
 		//System.out.println(evaluate()+" /"+test_inputs.rows());//evaluate test set with random weights
 		
 	}
 	
-	public DenseMatrix[][] backpropagation(DenseMatrix x, DenseMatrix y,CostFunction cost){
+	public DenseMatrix[][] backpropagation(DenseMatrix x, DenseMatrix y,CostFunction cost,ActivationFunction activationFunction){
 		//feed forward 	
-		feedforward(x);
+		feedforward(x,activationFunction);
 		
 		DenseMatrix[][] gradients = new DenseMatrix[2][layers.length-1];// for weights and bias
 		DenseMatrix[] delta = new DenseMatrix[layers.length];
 		
 		//find deltas
-		//delta[getNumberOfLayers()-1] = getActivations()[getNumberOfLayers()-1].subtract(y).hadamardProduct(sigmoidPrime(getZeta()[getNumberOfLayers()-1]));
 		delta[getNumberOfLayers()-1] = cost.delta(getActivations()[getNumberOfLayers()-1], y, getZeta()[getNumberOfLayers()-1]);
 		for (int i = numberOfLayers-2; i >=1 ; i--) {
 			//every activation array has a number of inputs as dimension. the other dimension matches the number neurons in each layer (need to add one for the bias)
-			delta[i] = (DenseMatrix) (delta[i+1].multiply( getWeights()[i])).hadamardProduct(sigmoidPrime(getZeta()[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
+			delta[i] = (DenseMatrix) (delta[i+1].multiply( getWeights()[i])).hadamardProduct(activationFunction.activationPrime(getZeta()[i]));//delta[i] = W[i]*delta(i+1).*sigmoidPrime(z[i])
 
 
 		}
@@ -135,8 +134,8 @@ public class NeuralNetwork {
 		
 	}
 	
-	public int evaluate(){
-		feedforward(test_inputs);
+	public int evaluate(ActivationFunction activationFunction){
+		feedforward(test_inputs,activationFunction);
 		int corrects = 0;
 		for (int j = 0; j < getActivations()[getNumberOfLayers()-1].rows(); j++) {
 			
@@ -385,6 +384,57 @@ public class NeuralNetwork {
 		public double getLambda(){
 			return lambda;
 		}
+	}
+	
+	public interface ActivationFunction{
+		public DenseMatrix activation(DenseMatrix z);
+		public DenseMatrix activationPrime(DenseMatrix z);
+	}
+	
+	public class Sigmoid implements ActivationFunction{
+
+		@Override
+		public DenseMatrix activation(DenseMatrix z) {
+			DenseMatrix sig = (DenseMatrix) z.transform(new MatrixFunction() {
+				
+				@Override
+				public double evaluate(int arg0, int arg1, double arg2) {
+					return 1.0 / (1.0 + Math.exp(-arg2));
+				}
+			});
+					
+			return(sig);
+		}
+
+		@Override
+		public DenseMatrix activationPrime(DenseMatrix z) {
+			DenseMatrix prime = (DenseMatrix) activation(z).hadamardProduct(DenseMatrix.constant(z.rows(), z.columns(), 1.0).subtract(activation(z)));
+			return prime;
+		}
+		
+	}
+	
+	public class Tanh implements ActivationFunction{
+
+		@Override
+		public DenseMatrix activation(DenseMatrix z) {
+			DenseMatrix sig = (DenseMatrix) z.transform(new MatrixFunction() {
+				
+				@Override
+				public double evaluate(int arg0, int arg1, double arg2) {
+					return  (2.0 / (1.0 + Math.exp(-2.0*arg2))) -1.0;
+				}
+			});
+					
+			return(sig);
+		}
+
+		@Override
+		public DenseMatrix activationPrime(DenseMatrix z) {
+			DenseMatrix prime =  (DenseMatrix) DenseMatrix.constant(z.rows(), z.columns(), 1.0).subtract(activation(z).hadamardProduct(activation(z)));
+			return prime;
+		}
+		
 	}
 	
 

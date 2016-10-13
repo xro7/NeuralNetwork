@@ -46,6 +46,9 @@ public class Main {
 			y.setRow(i, images.get(i).getLabel());
 		}
 		
+	//	DenseMatrix training_set = (DenseMatrix) x.insertColumn(0, y.getColumn(0));
+	//	printDimensions(training_set);
+		
 		try {
 			images2 = m2.loadDigitImages();
 		} catch (IOException e) {
