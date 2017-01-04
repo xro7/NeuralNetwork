@@ -10,12 +10,7 @@ import org.la4j.matrix.DenseMatrix;
 public class Main {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		
-/*		Matrix x = Matrix.from2DArray(new double[][]{{1,2},{1,2},{1,2}});
-		System.out.println(x);
-		x = x.insertColumn(0, Vector.fromArray(new double[]{6,6,5}));
-		System.out.println(x);*/
-			
+
 		DenseMatrix x;
 		DenseMatrix y;
 		DenseMatrix test_x;
@@ -75,10 +70,20 @@ public class Main {
 		double elapsedTime = System.nanoTime() - start;
 		
 		System.out.println("Done reading images after "+ elapsedTime/1000000000+" seconds");
-	
 		
-		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,10},trainingSet,validationSet,testSet);
-
+		
+/*		
+		ProcessInputs pi = new ProcessInputs(7767,561,"data/train/X_train.txt");
+		ProcessInputs pi2 = new ProcessInputs(7767,561,"data/train/Y_train.txt");
+		ProcessInputs pi3 = new ProcessInputs(3162,561,"data/test/X_test.txt");
+		ProcessInputs pi4 = new ProcessInputs(3162,561,"data/test/Y_test.txt");
+		DenseMatrix trainingSet = (DenseMatrix) pi.getInputs().insertColumn(0, pi2.getInputs().getColumn(0));
+		DenseMatrix testSet = (DenseMatrix) pi3.getInputs().insertColumn(0, pi4.getInputs().getColumn(0));
+	*/
+		
+		NeuralNetwork nn = new NeuralNetwork(new int[]{784,100,50,10},trainingSet,validationSet,testSet);
+		nn.sgd(70,10,0.01,nn.new CrossEntropyCostFunction(10),nn.new Sigmoid(),false);
+		//NeuralNetwork nn = new NeuralNetwork(new int[]{561,60,12},trainingSet,(DenseMatrix) Matrix.zero(4, 4),testSet);
 		
 	}
 	

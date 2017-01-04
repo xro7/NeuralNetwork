@@ -23,9 +23,6 @@ public class NeuralNetwork {
 		this.zeta = new DenseMatrix[layers.length];
 		this.weights = new DenseMatrix[numberOfLayers-1];
 		this.biases = new DenseMatrix[numberOfLayers-1];
-/*		trainSet = (DenseMatrix) trainSet.s;
-		validationSet = (DenseMatrix) validationSet.shuffle();
-		testSet = (DenseMatrix) testSet.shuffle();	*/	
 		this.setTraining_outputs(rawValuesToVector((DenseMatrix) trainSet.getColumn(0).toColumnMatrix(), layers[numberOfLayers-1]));
 		this.setTraining_inputs((DenseMatrix) trainSet.removeFirstColumn());
 		this.test_outputs = rawValuesToVector((DenseMatrix) testSet.getColumn(0).toColumnMatrix(), layers[numberOfLayers-1]);
@@ -38,7 +35,7 @@ public class NeuralNetwork {
 			randomInitBiases(this.biases[i]);
 		}
 
-		sgd(30,10,0.001,new CrossEntropyCostFunction(15.0),new Sigmoid(),false);
+		//sgd(30,10,0.001,new CrossEntropyCostFunction(10.0),new Sigmoid(),true);
 		
 	
 	}
@@ -51,8 +48,9 @@ public class NeuralNetwork {
 			
 			DenseMatrix unary = DenseMatrix.unit(getActivations()[i-1].rows(), 1);
 			bias[i-1] = (DenseMatrix) unary.multiply(getBiases()[i-1]);//need to make bias[i] from 1 X layers[i] to getActivations()[i-1].rows() X layers[i] so as to add it to z
-			zeta[i] = (DenseMatrix) (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//z =W*a b			
+			zeta[i] = (DenseMatrix) (getActivations()[i-1].multiply(getWeights()[i-1].transpose())).add(bias[i-1]) ;//z =W*a b	
 			getActivations()[i] = activationFunction.activation(getZeta()[i]);//sigmoid(z)
+			
 		}			
 	}		
 	
@@ -128,7 +126,7 @@ public class NeuralNetwork {
 		}
 		
 		
-		//multiply delta with unary array to make each row add to each other and get an 1Xdelta[i+1].colums() dimensional gradient
+		//multiply delta with unary array to make each row add to each other and get an 1Xdelta[i+1].columns() dimensional gradient
 		for (int i = 0; i< getNumberOfLayers()-1 ; i++) {
 			DenseMatrix unary = DenseMatrix.unit(1, delta[i+1].rows());
 			gradients[1][i] = (DenseMatrix) unary.multiply(delta[i+1]);
@@ -154,6 +152,21 @@ public class NeuralNetwork {
 		return(corrects);
 		
 	}
+	
+/*	public DenseMatrix softmax(DenseMatrix outputActivations){
+		
+		double sum=0.0;
+		for (int i = 0; i < outputActivations.rows(); i++) {
+			sum = sum + Math.exp(outputActivations.get(i, 0));
+		}
+		
+		DenseMatrix softmax = DenseMatrix.zero(outputActivations.rows(), 1);
+		for (int i = 0; i < softmax.rows(); i++) {
+			softmax.set(i, 0, Math.exp(outputActivations.get(i, 0))/sum);
+		}
+		return softmax;
+
+	}*/
 	
 	private int maxPosition(Vector v){
 		int position = 0;
@@ -436,6 +449,40 @@ public class NeuralNetwork {
 		@Override
 		public DenseMatrix activationPrime(DenseMatrix z) {
 			DenseMatrix prime =  (DenseMatrix) DenseMatrix.constant(z.rows(), z.columns(), 1.0).subtract(activation(z).hadamardProduct(activation(z)));
+			return prime;
+		}
+		
+	}
+	
+	public class ReLU implements ActivationFunction{
+
+		@Override
+		public DenseMatrix activation(DenseMatrix z) {
+			DenseMatrix sig = (DenseMatrix) z.transform(new MatrixFunction() {
+				
+				@Override
+				public double evaluate(int arg0, int arg1, double arg2) {
+					return  Math.max(0, arg2);
+				}
+			});
+					
+			return(sig);
+		}
+
+		@Override
+		public DenseMatrix activationPrime(DenseMatrix z) {
+			DenseMatrix prime =  (DenseMatrix) z.transform(new MatrixFunction() {
+				
+				@Override
+				public double evaluate(int arg0, int arg1, double arg2) {
+					if (arg2>0){
+						return  1.0;
+					}
+					else{
+						return  0.0;
+					}
+				}
+			});
 			return prime;
 		}
 		
